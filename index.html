@@ -5155,8 +5155,10 @@ a:focus-visible {
       sidebar.setAttribute('aria-label', 'Panel de navegación');
     }
     var tabsNav = document.querySelector('.tabs-nav');
-    if (tabsNav && !tabsNav.getAttribute('role')) {
+    if (tabsNav && tabsNav.tagName !== 'NAV') {
       tabsNav.setAttribute('role', 'tablist');
+      tabsNav.setAttribute('aria-label', 'Pestañas de análisis');
+    } else if (tabsNav) {
       tabsNav.setAttribute('aria-label', 'Pestañas de análisis');
     }
   }
