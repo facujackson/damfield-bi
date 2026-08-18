@@ -322,6 +322,7 @@ body.sidebar-collapsed { padding-left: 60px !important; }
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.55); z-index: 198;
   backdrop-filter: blur(2px);
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 .sb-overlay.active { display: block; }
 .sb-mobile-btn {
@@ -4536,7 +4537,7 @@ function renderTabAltasBajas() {
 
 
 <!-- Mobile sidebar button -->
-<button class="sb-mobile-btn" onclick="openMobileSidebar()" title="Menú">&#9776;</button>
+<button class="sb-mobile-btn" id="sb-mobile-btn" onclick="toggleMobileSidebar()" title="Menú">&#9776;</button>
 <div class="sb-overlay" id="sb-overlay" onclick="closeMobileSidebar()"></div>
 
 <script>
@@ -4564,14 +4565,29 @@ function toggleSidebar() {
 }
 
 // ─── Mobile sidebar ─────────────────────────────────────────────────
+function toggleMobileSidebar() {
+  var sb = document.getElementById('sidebar');
+  if (sb.classList.contains('mobile-open')) { closeMobileSidebar(); } else { openMobileSidebar(); }
+}
 function openMobileSidebar() {
   document.getElementById('sidebar').classList.add('mobile-open');
   document.getElementById('sb-overlay').classList.add('active');
+  var btn = document.getElementById('sb-mobile-btn');
+  if (btn) { btn.innerHTML = '&#10005;'; btn.style.left = '195px'; }
 }
 function closeMobileSidebar() {
   document.getElementById('sidebar').classList.remove('mobile-open');
   document.getElementById('sb-overlay').classList.remove('active');
+  var btn = document.getElementById('sb-mobile-btn');
+  if (btn) { btn.innerHTML = '&#9776;'; btn.style.left = '10px'; }
 }
+// Touch fix para overlay en iOS
+(function() {
+  var ov = document.getElementById('sb-overlay');
+  if (ov) {
+    ov.addEventListener('touchend', function(e) { e.preventDefault(); closeMobileSidebar(); }, {passive: false});
+  }
+})();
 // Cerrar sidebar mobile al cambiar de tab
 var _origSbSwitch = window.sbSwitch;
 window.sbSwitch = function(n) {
