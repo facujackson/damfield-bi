@@ -4899,5 +4899,440 @@ if (window.innerWidth <= 1100 && window.innerWidth > 768 && !_sbCollapsed) {
 }
 </style>
 
+<!-- ═══════════════════════════════════════════════════
+     UX AUDIT FIXES — v7_TEST
+     Aplica correcciones C1·C2·H1–H4·M1–M6·L1–L4
+     ═══════════════════════════════════════════════════ -->
+<style id="ux-audit-css">
+/* ── M1: Color contrast (WCAG AA) ── */
+.sb-bi-label { color: #8a91b5 !important; }
+.sidebar-footer { color: #6e7499 !important; font-size: 10.5px !important; }
+.filter-label { color: #9aa2c5 !important; }
+
+/* ── L3: Focus visible ── */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--sc-gold, #FDB913) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+
+/* ── M6: Text ellipsis in Semanal table cells ── */
+#tab-semanal table td {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 220px !important;
+}
+
+/* ── H3: Compact mes-filtro-banner ── */
+#mes-filtro-banner {
+  padding: 5px 12px !important;
+  margin: 0 0 10px 0 !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  min-height: unset !important;
+}
+
+/* ── H4: Accesos mini-nav ── */
+#accesos-mini-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 2px 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+#accesos-mini-nav a {
+  font-size: 11px;
+  color: var(--sc-gold, #FDB913);
+  text-decoration: none;
+  background: rgba(253,185,19,0.07);
+  border: 1px solid rgba(253,185,19,0.22);
+  border-radius: 5px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+#accesos-mini-nav a:hover { background: rgba(253,185,19,0.18); }
+#accesos-mini-nav .nav-label {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── M5: Desglose toggle ── */
+#kpi-desglose-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--sc-gold, #FDB913);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  margin: 10px 0 14px;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+#kpi-desglose-toggle:hover {
+  background: rgba(253,185,19,0.07);
+  border-color: rgba(253,185,19,0.4);
+}
+
+/* ── M2: Screen-reader helpers ── */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ── C1: Pagination bar ── */
+.sinplan-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.sinplan-pagination button {
+  background: var(--color-surface2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.sinplan-pagination button:hover { background: rgba(253,185,19,0.1); }
+.sinplan-pagination .page-badge {
+  padding: 4px 12px;
+  background: rgba(253,185,19,0.1);
+  border-radius: 6px;
+  color: var(--sc-gold, #FDB913);
+  font-weight: 600;
+}
+</style>
+
+<script id="ux-audit-fixes">
+(function () {
+  'use strict';
+
+  /* ── C1: Paginated tabla-sinplan ─────────────────────── */
+  var SP_PAGE = 0;
+  var SP_SIZE = 60;
+
+  window._renderTablaSinPlan = function () {
+    SP_PAGE = 0;
+    _renderSinPlanPage(0);
+  };
+
+  window._renderSinPlanPage = function (page) {
+    SP_PAGE = page;
+    var all = window._getSinPlanFiltered ? window._getSinPlanFiltered() : [];
+    var total = all.length;
+    var start = page * SP_SIZE;
+    var end = Math.min(start + SP_SIZE, total);
+    var rows = all.slice(start, end);
+    var totalPages = Math.ceil(total / SP_SIZE);
+    var fmtN = window.fmt || function(n){ return n; };
+
+    var tbl = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      + '<thead><tr style="border-bottom:2px solid var(--color-border);">'
+      + '<th style="text-align:left;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">Socio</th>'
+      + '<th style="text-align:left;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">DNI</th>'
+      + '<th style="text-align:center;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">Entradas sin plan</th>'
+      + '<th style="text-align:center;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">Hora típica</th>'
+      + '<th style="text-align:center;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">Primera vez</th>'
+      + '<th style="text-align:center;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">Última vez</th>'
+      + '<th style="text-align:center;padding:8px 10px;color:var(--color-text-muted);font-size:11px;font-weight:600;text-transform:uppercase;">Cat.</th>'
+      + '</tr></thead><tbody>';
+
+    rows.forEach(function (r, i) {
+      var idx = start + i;
+      var ent = r[4];
+      var bg = idx % 2 === 0 ? 'background:var(--color-surface2);' : '';
+      var danger = ent >= 200 ? 'color:#E74C3C;font-weight:700;' : ent >= 50 ? 'color:#F39C12;font-weight:600;' : '';
+      var bgOut = idx % 2 === 0 ? 'var(--color-surface2)' : 'transparent';
+      var nombre = (r[1] || '') + ' ' + (r[2] || '');
+      tbl += '<tr style="' + bg + 'transition:background .15s;" '
+        + 'onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" '
+        + 'onmouseout="this.style.background=\'' + bgOut + '\'">'
+        + '<td style="padding:8px 10px;font-weight:500;" title="' + nombre.trim() + '">' + (r[1] || '—') + ' ' + (r[2] || '') + '</td>'
+        + '<td style="padding:8px 10px;color:#7F8C8D;font-size:11px;">' + r[0] + '</td>'
+        + '<td style="padding:8px 10px;text-align:center;' + danger + '">' + fmtN(ent) + '</td>'
+        + '<td style="padding:8px 10px;text-align:center;font-weight:600;">' + String(r[8]).padStart(2, '0') + 'h</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:#7F8C8D;font-size:11px;">' + r[6] + '</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:#7F8C8D;font-size:11px;">' + r[7] + '</td>'
+        + '<td style="padding:8px 10px;text-align:center;font-size:11px;color:#7F8C8D;">' + (r[3] || '—') + '</td>'
+        + '</tr>';
+    });
+    tbl += '</tbody></table></div>';
+
+    /* Pagination bar */
+    var pbar = '<div class="sinplan-pagination"><span>Mostrando <strong style="color:var(--color-text)">'
+      + (start + 1) + '–' + end + '</strong> de <strong style="color:var(--color-text)">' + total + '</strong> socios</span>'
+      + '<div style="display:flex;gap:6px;align-items:center;">';
+    if (page > 0)
+      pbar += '<button onclick="_renderSinPlanPage(' + (page - 1) + ')">← Anterior</button>';
+    pbar += '<span class="page-badge">Pág. ' + (page + 1) + ' / ' + totalPages + '</span>';
+    if (page < totalPages - 1)
+      pbar += '<button onclick="_renderSinPlanPage(' + (page + 1) + ')">Siguiente →</button>';
+    pbar += '</div></div>';
+    tbl += pbar;
+
+    var el = document.getElementById('tabla-sinplan');
+    if (el) {
+      el.innerHTML = tbl;
+      if (page > 0) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    var countEl = document.getElementById('sinplan-count');
+    if (countEl) countEl.textContent = total + ' socios';
+  };
+
+  /* ── C2: Aria labels for all selects & inputs ────────── */
+  function addAriaLabels() {
+    var labelMap = {
+      'filtro-plan-global':   'Filtrar por plan',
+      'filtro-metodo-global': 'Filtrar por método de pago',
+      'filtro-mes-global':    'Filtrar por mes',
+      'filtro-semana-global': 'Filtrar por semana',
+      'mes-detalle-select':   'Mes a analizar',
+      'evol-mes-desde':       'Desde mes',
+      'evol-mes-hasta':       'Hasta mes',
+      'comp-year-base':       'Año base comparativa',
+      'comp-year-comp':       'Año a comparar',
+      'comp-mes-inicio':      'Mes inicio comparativa',
+      'comp-mes-fin':         'Mes fin comparativa',
+      'comp-metrica':         'Métrica de comparativa',
+      'gantt-mm-filter':      'Filtro multi-mes',
+      'filtro-nivel-riesgo':  'Filtro nivel de riesgo',
+      'busca-sinplan':        'Buscar socio sin plan',
+      'rs-period-value':      'Período del resumen ejecutivo',
+    };
+    document.querySelectorAll('select, input').forEach(function (el) {
+      if (el.getAttribute('aria-label')) return;
+      if (labelMap[el.id]) { el.setAttribute('aria-label', labelMap[el.id]); return; }
+      var fg = el.closest('.filter-group');
+      if (fg) {
+        var lbl = fg.querySelector('.filter-label');
+        if (lbl && lbl.textContent.trim()) { el.setAttribute('aria-label', lbl.textContent.trim()); return; }
+      }
+      if (el.placeholder) el.setAttribute('aria-label', el.placeholder);
+      else if (el.id) el.setAttribute('aria-label', el.id.replace(/-/g, ' '));
+    });
+  }
+
+  /* ── M2: Semantic landmarks & sr-only h1 ─────────────── */
+  function addSemanticLandmarks() {
+    if (!document.querySelector('h1')) {
+      var h1 = document.createElement('h1');
+      h1.className = 'sr-only';
+      h1.textContent = 'SportClub Funes — Business Intelligence';
+      document.body.insertBefore(h1, document.body.firstChild);
+    }
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar && !sidebar.getAttribute('role')) {
+      sidebar.setAttribute('role', 'navigation');
+      sidebar.setAttribute('aria-label', 'Panel de navegación');
+    }
+    var tabsNav = document.querySelector('.tabs-nav');
+    if (tabsNav && !tabsNav.getAttribute('role')) {
+      tabsNav.setAttribute('role', 'tablist');
+      tabsNav.setAttribute('aria-label', 'Pestañas de análisis');
+    }
+  }
+
+  /* ── M4: Sidebar toggle tooltip ─────────────────────── */
+  function addSidebarHint() {
+    var btn = document.querySelector('.sb-toggle-btn');
+    if (btn) {
+      btn.setAttribute('title', 'Contraer / expandir panel');
+      btn.setAttribute('aria-label', 'Contraer panel lateral');
+    }
+  }
+
+  /* ── H2 + M3: Sync Socios mes with global filter ─────── */
+  function syncSociosMes() {
+    var globalSel = document.getElementById('filtro-mes-global');
+    var detalleEl = document.getElementById('mes-detalle-select');
+    if (!globalSel || !detalleEl) return;
+    if (globalSel.value) {
+      var match = Array.from(detalleEl.options).find(function (o) { return o.value === globalSel.value; });
+      if (match && detalleEl.value !== globalSel.value) {
+        detalleEl.value = globalSel.value;
+        if (typeof window.renderMesDetalle === 'function') window.renderMesDetalle();
+      }
+    }
+    /* M3: ensure empty-state message */
+    var panel = document.getElementById('mes-detalle-panel');
+    if (panel && !panel.innerHTML.trim()) {
+      panel.innerHTML = '<div style="color:var(--color-text-muted);font-size:13px;padding:8px 0;">Seleccioná un mes en el selector de arriba para ver el análisis de socios.</div>';
+    }
+  }
+
+  /* Patch onMesFiltroChange to also sync Socios tab */
+  var _origMesFiltro = window.onMesFiltroChange;
+  if (typeof _origMesFiltro === 'function') {
+    window.onMesFiltroChange = function () {
+      _origMesFiltro.apply(this, arguments);
+      syncSociosMes();
+    };
+  }
+
+  /* Patch sbSwitch to trigger Socios sync on tab-3 */
+  var _origSbSwitch = window.sbSwitch;
+  if (typeof _origSbSwitch === 'function') {
+    window.sbSwitch = function (n) {
+      _origSbSwitch.apply(this, arguments);
+      if (n === 3) setTimeout(syncSociosMes, 80);
+    };
+  }
+
+  /* Patch switchTab as well (tab-bar buttons use this) */
+  var _origSwitchTab = window.switchTab;
+  if (typeof _origSwitchTab === 'function') {
+    window.switchTab = function (n) {
+      _origSwitchTab.apply(this, arguments);
+      if (n === 3) setTimeout(syncSociosMes, 80);
+    };
+  }
+
+  /* ── H4: Accesos mini-nav ────────────────────────────── */
+  function addAccesosMiniNav() {
+    var tab = document.getElementById('tab-accesos');
+    if (!tab || document.getElementById('accesos-mini-nav')) return;
+
+    /* Assign anchor IDs to sections */
+    var kpiGrid = tab.querySelector('.kpi-grid');
+    if (kpiGrid && !kpiGrid.id) kpiGrid.id = 'acc-kpis';
+
+    var chartGrids = tab.querySelectorAll('.chart-grid');
+    if (chartGrids[0] && !chartGrids[0].id) chartGrids[0].id = 'acc-evolucion';
+
+    var heatmapCard = tab.querySelector('#heatmap-accesos');
+    if (heatmapCard) { var hc = heatmapCard.closest('.chart-card'); if (hc && !hc.id) hc.id = 'acc-heatmap'; }
+
+    if (chartGrids[1] && !chartGrids[1].id) chartGrids[1].id = 'acc-horarios';
+
+    var sinplanCard = tab.querySelector('.chart-card[style*="E74C3C"], #tabla-sinplan');
+    if (sinplanCard) { var sc = sinplanCard.closest ? sinplanCard.closest('.chart-card') : null; if (sc && !sc.id) sc.id = 'acc-sinplan'; }
+
+    var riesgoCard = tab.querySelector('#tabla-riesgo');
+    if (riesgoCard) { var rc = riesgoCard.closest('.chart-card'); if (rc && !rc.id) rc.id = 'acc-riesgo'; }
+
+    var nav = document.createElement('div');
+    nav.id = 'accesos-mini-nav';
+    var items = [
+      ['acc-kpis',     '📊 KPIs'],
+      ['acc-evolucion','📈 Evolución'],
+      ['acc-heatmap',  '🌡 Heatmap'],
+      ['acc-horarios', '⏰ Horarios'],
+      ['acc-sinplan',  '🚨 Sin Plan'],
+      ['acc-riesgo',   '⚠️ Riesgo'],
+    ];
+    nav.innerHTML = '<span class="nav-label">Ir a:</span>'
+      + items.map(function (it) {
+          return '<a href="#' + it[0] + '" onclick="event.preventDefault();'
+            + '(document.getElementById(\'' + it[0] + '\')||{}).scrollIntoView&&'
+            + 'document.getElementById(\'' + it[0] + '\').scrollIntoView({behavior:\'smooth\',block:\'start\'})">'
+            + it[1] + '</a>';
+        }).join('');
+    tab.insertBefore(nav, tab.firstChild);
+  }
+
+  /* ── M5: Desglose section toggle in Tab-0 ────────────── */
+  function addDesgloseToggle() {
+    var desglose = document.getElementById('section-fac-bruta-desglose');
+    if (!desglose || document.getElementById('kpi-desglose-toggle')) return;
+
+    var btn = document.createElement('button');
+    btn.id = 'kpi-desglose-toggle';
+    btn.innerHTML = 'Ver desglose de Facturación Bruta ▾';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('title', 'Mostrar/ocultar desglose detallado de facturación');
+
+    var expanded = false;
+    desglose.style.display = 'none';
+
+    btn.onclick = function () {
+      expanded = !expanded;
+      desglose.style.display = expanded ? '' : 'none';
+      btn.innerHTML = expanded ? 'Ocultar desglose ▴' : 'Ver desglose de Facturación Bruta ▾';
+      btn.setAttribute('aria-expanded', String(expanded));
+    };
+    desglose.parentNode.insertBefore(btn, desglose);
+  }
+
+  /* ── L1: Year button tooltips ────────────────────────── */
+  function addYearTooltips() {
+    document.querySelectorAll('.year-btn[onclick*="toggleYear"]').forEach(function (btn) {
+      var yr = btn.textContent.trim();
+      if (/^\d{4}$/.test(yr))
+        btn.setAttribute('title', 'Ver todo ' + yr + ' (reemplaza el filtro de mes activo)');
+    });
+    var ars = document.getElementById('btn-ars');
+    var usd = document.getElementById('btn-usd');
+    if (ars) ars.setAttribute('title', 'Mostrar montos en pesos argentinos');
+    if (usd) usd.setAttribute('title', 'Mostrar montos en dólares');
+  }
+
+  /* ── H1: Semanal table - add title attr to plan cells ── */
+  /* (CSS already applies ellipsis; MutationObserver adds title) */
+  function addSemanalTitles() {
+    var container = document.getElementById('tabla-semanal');
+    if (!container) return;
+    function applyTitles(root) {
+      root.querySelectorAll('td').forEach(function (td) {
+        var txt = td.textContent.trim();
+        if (txt && !td.getAttribute('title')) td.setAttribute('title', txt);
+      });
+    }
+    applyTitles(container);
+    var obs = new MutationObserver(function () { applyTitles(container); });
+    obs.observe(container, { childList: true, subtree: true });
+  }
+
+  /* ── Run all fixes ───────────────────────────────────── */
+  function runAll() {
+    addAriaLabels();
+    addSemanticLandmarks();
+    addSidebarHint();
+    addAccesosMiniNav();
+    addDesgloseToggle();
+    addYearTooltips();
+    addSemanalTitles();
+    /* Re-render paginated table if already populated */
+    var sinplanEl = document.getElementById('tabla-sinplan');
+    if (sinplanEl && sinplanEl.querySelector('tbody tr'))
+      window._renderTablaSinPlan();
+  }
+
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', runAll);
+  else
+    setTimeout(runAll, 900);   /* after existing init scripts settle */
+
+})();
+</script>
+
 </body>
 </html>
