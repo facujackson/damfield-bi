@@ -5343,18 +5343,18 @@ a:focus-visible {
    [0]dni [1]origen [2]estado [3]periodo [4]metodo [5]precio_plan
    [6]precio_final [7]comision_mp [8]impuestos_mp [9]comision_cadena
    [10]monto_recibido [11]fecha_original [12]fecha_aprobacion [13]nombre_plan */
-const DATA_REEMBOLSOS = [
+window.DATA_REEMBOLSOS = [
   ["45617885","Cobro Recurrente","reembolsado","6/2026","Tarjeta de Crédito",70000,70000,1694,1820,9500,0,"05/06/2026","05/06/2026","PLAN FUNES"]
 ];
 
 (function () {
   'use strict';
 
-  /* Filtra DATA_REEMBOLSOS con las mismas reglas de fecha que filtrarCobrosAprobacion() */
+  /* Filtra window.DATA_REEMBOLSOS con las mismas reglas de fecha que filtrarCobrosAprobacion() */
   function filtrarReembolsos() {
     if (typeof window.getFilters !== 'function') return [];
     var f = window.getFilters();
-    return DATA_REEMBOLSOS.filter(function (r) {
+    return window.DATA_REEMBOLSOS.filter(function (r) {
       if (!r[12]) return false;
       var fa = r[12]; /* DD/MM/YYYY */
       /* Convertir a YYYY-MM-DD para comparar */
@@ -5472,8 +5472,9 @@ const DATA_REEMBOLSOS = [
     }
   }
 
-  /* ── Parchear renderTab0 y renderTab1 ── */
-  function patchRenders() {
+  /* ── Parchear renderTab0 y renderTab1 e inyectar en tab activo ── */
+  function patchAndInject() {
+    /* Envolver renders futuros */
     var _origTab0 = window.renderTab0;
     if (typeof _origTab0 === 'function') {
       window.renderTab0 = function () {
@@ -5489,13 +5490,14 @@ const DATA_REEMBOLSOS = [
         setTimeout(injectTab1Reembolsos, 0);
       };
     }
+
+    /* Inyectar también en el tab actualmente visible */
+    injectTab0Reembolsos();
+    injectTab1Reembolsos();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', patchRenders);
-  } else {
-    setTimeout(patchRenders, 950);
-  }
+  /* Esperar 1200ms para asegurarse de que ux-audit-fixes (950ms) ya corrió */
+  setTimeout(patchAndInject, 1200);
 })();
 </script>
 
