@@ -367,7 +367,7 @@ body { padding-left: 230px !important; }
 @media (max-width: 768px) {
   body, body.sidebar-collapsed { padding-left: 0 !important; }
   .sidebar {
-    left: -230px; width: 230px !important;
+    left: -240px; width: 230px !important;
     transition: left 0.25s ease, width 0s !important;
     box-shadow: none;
   }
@@ -378,8 +378,34 @@ body { padding-left: 230px !important; }
   .sb-mobile-btn { display: flex !important; }
   .sb-toggle-btn { display: none !important; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .filters-bar { padding-left: 54px !important; }
   .tab-content { padding: 12px 10px !important; }
+  .filters-bar {
+    padding: 6px 10px 6px 54px !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+  .fb-toggle-btn {
+    display: inline-flex !important;
+    align-items: center; gap: 4px;
+    background: #1e2235; border: 1px solid #2a2d3e;
+    color: #c5cde0; border-radius: 6px;
+    padding: 5px 12px; font-size: 11px; cursor: pointer;
+    white-space: nowrap; font-family: inherit;
+  }
+  .fb-collapsible {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    padding-top: 4px;
+  }
+  .fb-collapsible.open { display: flex !important; }
+  .filter-select { min-width: 100px !important; font-size: 11px !important; padding: 3px 8px !important; }
+  .filter-label { font-size: 9px !important; }
+  .year-toggle button { padding: 3px 7px !important; font-size: 11px !important; }
+  .btn-reset { font-size: 11px !important; padding: 4px 10px !important; }
 }
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr 1fr !important; }
@@ -3778,6 +3804,8 @@ function sbSwitch(n) {
       <button class="year-btn active" data-year="2026" onclick="toggleYear(this)">2026</button>
     </div>
   </div>
+  <button class="fb-toggle-btn" id="fb-toggle-btn" onclick="toggleMobileFilters()">Filtros &#9660;</button>
+  <div class="fb-collapsible" id="fb-collapsible">
   <div class="filter-group">
     <div class="filter-label">Mes específico</div>
     <select class="filter-select" id="filtro-mes-global" onchange="onMesFiltroChange()" style="min-width:150px;">
@@ -3816,6 +3844,7 @@ function sbSwitch(n) {
     </div>
   </div>
   <button class="btn-reset" onclick="resetFilters()">↺ Reset filtros</button>
+  </div><!-- /fb-collapsible -->
 </div>
 <div id="mes-filtro-banner" style="display:none;align-items:center;gap:10px;background:rgba(0,168,232,0.12);border:1px solid var(--sc-blue,#00A8E8);border-radius:8px;padding:8px 14px;margin:0 0 16px 0;font-size:13px;color:var(--color-text);">
   <span></span>
@@ -4543,6 +4572,14 @@ function renderTabAltasBajas() {
 <script>
 // ─── Sidebar collapse ───────────────────────────────────────────────
 var _sbCollapsed = false;
+function toggleMobileFilters() {
+  var fc = document.getElementById('fb-collapsible');
+  var btn = document.getElementById('fb-toggle-btn');
+  if (!fc) return;
+  var open = fc.classList.toggle('open');
+  if (btn) btn.innerHTML = open ? 'Filtros &#9650;' : 'Filtros &#9660;';
+}
+
 function toggleSidebar() {
   _sbCollapsed = !_sbCollapsed;
   var sb = document.getElementById('sidebar');
