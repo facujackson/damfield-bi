@@ -5334,6 +5334,169 @@ a:focus-visible {
     setTimeout(runAll, 900);   /* after existing init scripts settle */
 
 })();
+
+/* ═══════════════════════════════════════════════════
+   REEMBOLSOS — datos y visualización
+   ═══════════════════════════════════════════════════ */
+
+/* Formato igual a DATA_COBROS:
+   [0]dni [1]origen [2]estado [3]periodo [4]metodo [5]precio_plan
+   [6]precio_final [7]comision_mp [8]impuestos_mp [9]comision_cadena
+   [10]monto_recibido [11]fecha_original [12]fecha_aprobacion [13]nombre_plan */
+const DATA_REEMBOLSOS = [
+  ["45617885","Cobro Recurrente","reembolsado","6/2026","Tarjeta de Crédito",70000,70000,1694,1820,9500,0,"05/06/2026","05/06/2026","PLAN FUNES"]
+];
+
+(function () {
+  'use strict';
+
+  /* Filtra DATA_REEMBOLSOS con las mismas reglas de fecha que filtrarCobrosAprobacion() */
+  function filtrarReembolsos() {
+    if (typeof window.getFilters !== 'function') return [];
+    var f = window.getFilters();
+    return DATA_REEMBOLSOS.filter(function (r) {
+      if (!r[12]) return false;
+      var fa = r[12]; /* DD/MM/YYYY */
+      /* Convertir a YYYY-MM-DD para comparar */
+      var parts = fa.split('/');
+      var isoFa = parts[2] + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
+      if (f.semana) {
+        if (typeof window._wkKey === 'function' && window._wkKey(r[12]) !== f.semana) return false;
+      } else if (f.mes) {
+        var yyyymm = isoFa.slice(0,7).replace('-','');
+        var fMes   = (f.mes || '').replace('-','');
+        if (yyyymm !== fMes) return false;
+      } else {
+        var yr = isoFa.slice(0,4);
+        if (f.years && f.years.size > 0 && !f.years.has(yr)) return false;
+      }
+      if (f.plan   && r[13] !== f.plan)   return false;
+      if (f.metodo && r[4]  !== f.metodo) return false;
+      return true;
+    });
+  }
+
+  /* Formatea moneda (reutiliza formatARS del dashboard si existe) */
+  function monedaFmt(v) {
+    if (typeof window.formatARS === 'function') return window.formatARS(v);
+    return '$' + Math.round(v).toLocaleString('es-AR');
+  }
+
+  /* ── Inyecta KPI de reembolsos en Tab-0 (Resumen Ejecutivo) ── */
+  function injectTab0Reembolsos() {
+    var grid = document.getElementById('kpi-resumen');
+    if (!grid) return;
+    var prev = document.getElementById('kpi-remb-tab0');
+    if (prev) prev.remove();
+
+    var rembs = filtrarReembolsos();
+    if (rembs.length === 0) return; /* no reembolsos en el período → no mostrar */
+
+    var total = rembs.reduce(function(s,r){ return s+(r[6]||0); }, 0);
+    var card  = document.createElement('div');
+    card.id   = 'kpi-remb-tab0';
+    card.className = 'kpi-card';
+    card.innerHTML =
+      '<div class="kpi-label">Reembolsos del período</div>'
+      + '<div class="kpi-value danger">−' + monedaFmt(total) + '</div>'
+      + '<div class="kpi-sub">' + rembs.length + ' cobro' + (rembs.length > 1 ? 's' : '') + ' revertido' + (rembs.length > 1 ? 's' : '') + ' · impacto neto negativo</div>';
+    grid.appendChild(card);
+  }
+
+  /* ── Inyecta KPI + tabla de reembolsos en Tab-1 (Estructura de Cobros) ── */
+  function injectTab1Reembolsos() {
+    var grid = document.getElementById('kpi-cobros');
+    if (!grid) return;
+
+    /* Remover inyecciones previas */
+    var prevCard  = document.getElementById('kpi-remb-tab1');
+    var prevPanel = document.getElementById('panel-remb-tab1');
+    if (prevCard)  prevCard.remove();
+    if (prevPanel) prevPanel.remove();
+
+    var rembs = filtrarReembolsos();
+    if (rembs.length === 0) return;
+
+    var totalRemb = rembs.reduce(function(s,r){ return s+(r[6]||0); }, 0);
+
+    /* KPI card — 5.º card en la grilla */
+    var card = document.createElement('div');
+    card.id  = 'kpi-remb-tab1';
+    card.className = 'kpi-card';
+    card.innerHTML =
+      '<div class="kpi-label">Reembolsos del período</div>'
+      + '<div class="kpi-value danger">−' + monedaFmt(totalRemb) + '</div>'
+      + '<div class="kpi-sub">' + rembs.length + ' boleta' + (rembs.length > 1 ? 's' : '') + ' revertida' + (rembs.length > 1 ? 's' : '') + ' · no incluidas en cobros bruto</div>';
+    grid.appendChild(card);
+
+    /* Panel de detalle */
+    var panel = document.createElement('div');
+    panel.id  = 'panel-remb-tab1';
+    panel.style.cssText = 'margin-top:16px;background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.35);border-radius:10px;padding:14px 18px;';
+
+    var rows = rembs.map(function(r, i) {
+      return '<tr style="' + (i%2===0?'background:rgba(231,76,60,0.04);':'') + '">'
+        + '<td style="padding:7px 10px;font-weight:500;">' + (r[0]||'—') + '</td>'
+        + '<td style="padding:7px 10px;">' + (r[13]||'—') + '</td>'
+        + '<td style="padding:7px 10px;">' + (r[4]||'—') + '</td>'
+        + '<td style="padding:7px 10px;">' + (r[3]||'—') + '</td>'
+        + '<td style="padding:7px 10px;text-align:right;color:#E74C3C;font-weight:600;">−' + monedaFmt(r[6]||0) + '</td>'
+        + '<td style="padding:7px 10px;text-align:center;color:#7F8C8D;font-size:11px;">' + (r[12]||'—') + '</td>'
+        + '</tr>';
+    }).join('');
+
+    panel.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
+        + '<span style="font-size:13px;font-weight:700;color:#E74C3C;">🔄 Detalle de Reembolsos</span>'
+        + '<span style="font-size:11px;color:#7F8C8D;">Cobros aprobados que fueron revertidos — se descuentan del monto cobrado real</span>'
+      + '</div>'
+      + '<div style="overflow-x:auto;">'
+        + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+          + '<thead><tr style="border-bottom:1px solid rgba(231,76,60,0.4);">'
+            + '<th style="padding:6px 10px;text-align:left;color:#E74C3C;font-size:11px;font-weight:700;text-transform:uppercase;">DNI</th>'
+            + '<th style="padding:6px 10px;text-align:left;color:#E74C3C;font-size:11px;font-weight:700;text-transform:uppercase;">Plan</th>'
+            + '<th style="padding:6px 10px;text-align:left;color:#E74C3C;font-size:11px;font-weight:700;text-transform:uppercase;">Método</th>'
+            + '<th style="padding:6px 10px;text-align:left;color:#E74C3C;font-size:11px;font-weight:700;text-transform:uppercase;">Período</th>'
+            + '<th style="padding:6px 10px;text-align:right;color:#E74C3C;font-size:11px;font-weight:700;text-transform:uppercase;">Monto</th>'
+            + '<th style="padding:6px 10px;text-align:center;color:#E74C3C;font-size:11px;font-weight:700;text-transform:uppercase;">Fecha</th>'
+          + '</tr></thead>'
+          + '<tbody>' + rows + '</tbody>'
+        + '</table>'
+      + '</div>';
+
+    var mesPanel = document.getElementById('kpi-cobros-mes');
+    if (mesPanel) {
+      mesPanel.parentNode.insertBefore(panel, mesPanel);
+    } else {
+      grid.parentNode.appendChild(panel);
+    }
+  }
+
+  /* ── Parchear renderTab0 y renderTab1 ── */
+  function patchRenders() {
+    var _origTab0 = window.renderTab0;
+    if (typeof _origTab0 === 'function') {
+      window.renderTab0 = function () {
+        _origTab0.apply(this, arguments);
+        setTimeout(injectTab0Reembolsos, 0);
+      };
+    }
+
+    var _origTab1 = window.renderTab1;
+    if (typeof _origTab1 === 'function') {
+      window.renderTab1 = function () {
+        _origTab1.apply(this, arguments);
+        setTimeout(injectTab1Reembolsos, 0);
+      };
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', patchRenders);
+  } else {
+    setTimeout(patchRenders, 950);
+  }
+})();
 </script>
 
 </body>
