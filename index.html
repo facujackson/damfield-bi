@@ -34,10 +34,9 @@ body { font-family: 'Inter', sans-serif; background: var(--color-bg); color: var
   position: sticky; top: 0; z-index: 100;
   background: linear-gradient(135deg, #0d1f30 0%, #1a2a3a 60%, #1f1a0f 100%);
   border-bottom: 2px solid var(--sc-red);
-  box-shadow: 0 2px 0 var(--sc-gold), 0 4px 20px rgba(227,30,36,0.15);
+  box-shadow: 0 2px 0 var(--sc-gold), 0 4px 24px rgba(0,0,0,0.5);
   padding: 12px 24px;
   display: flex; align-items: center; justify-content: space-between;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
 }
 .header-left { display: flex; align-items: center; gap: 14px; }
 .header-logo-img {
@@ -128,7 +127,7 @@ canvas { width: 100% !important; }
   border-bottom: 1px solid var(--color-border);
 }
 .data-table td { padding: 9px 14px; border-bottom: 1px solid rgba(44,62,80,0.5); color: var(--color-text); }
-.data-table tr:hover td { background: rgba(0,168,232,0.05); }
+.data-table tr:hover td { background: rgba(253,185,19,0.05); }
 .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 /* USD toggle active state — brand gold */
 #btn-usd.active { background: var(--sc-gold) !important; color: #0F1923 !important; border-color: var(--sc-gold) !important; font-weight: 800; }
@@ -1490,7 +1489,7 @@ function renderTab0() {
       ? notasCreditoPeriodo.reduce((s,r)=>s+toUSD(fechaToYYYYMM(r[1]),r[8]||0),0)
       : totalNotasCredito;
     _secFBD.innerHTML =
-      '<div class="chart-title">🧾 Desglose de Facturación Bruta</div>'
+      '<div class="chart-title">Desglose de Facturación Bruta</div>'
       +'<div class="chart-subtitle">Composición del número: total pago Odoo + ajuste cadena GED '+(totalNotasCredito<0?'− notas de crédito':'')+'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-top:14px;">'
         +'<div class="kpi-card">'
@@ -3316,6 +3315,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // COMPARATIVA INTERACTIVA + PROYECCIÓN
 // ============================================================
 const MESES_NOMBRES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+var MESES_NOMBRES_FULL = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function toggleMoneda(m) {
   COMP_MONEDA = m;
@@ -3897,7 +3897,7 @@ function sbSwitch(n) {
 <div class="tab-content active" id="tab-0">
 
   <!-- Selector de Período local del Resumen Ejecutivo -->
-  <div style="background:var(--color-surface2);border:1px solid var(--color-border);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+  <div class="rs-period-selector" style="background:var(--color-surface2);border:1px solid var(--color-border);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
     <div style="display:flex;gap:6px;">
       <button class="rs-ptype" data-type="semana" onclick="setRSPeriodType('semana')" style="background:var(--color-surface);color:var(--color-text-muted);border:1px solid var(--color-border);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Semana</button>
       <button class="rs-ptype active" data-type="mes" onclick="setRSPeriodType('mes')" style="background:var(--color-accent);color:#fff;border:1px solid var(--color-accent);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Mes</button>
@@ -3913,13 +3913,13 @@ function sbSwitch(n) {
   <!-- Desglose Facturación Bruta -->
   <div class="chart-card full" id="section-fac-bruta-desglose" style="margin-top:16px;"></div>
 
-  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-text-muted);margin-bottom:10px;margin-top:18px;">Lo más importante de cada pestaña — período seleccionado arriba</div>
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-text-muted);margin-bottom:10px;margin-top:18px;"><span class="section-eyebrow">Lo más importante de cada pestaña</span> <span style="font-size:11px;color:var(--color-text-muted);">— período seleccionado arriba</span></div>
   <div class="kpi-grid" id="kpi-cross-tab" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px;"></div>
 
   <div class="chart-grid">
     <div class="chart-card" style="display:flex;flex-direction:column;">
       <div class="chart-title" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>🏋️ Top 5 Planes</span>
+        <span>Top 5 Planes</span>
         <span onclick="switchTab(2)" style="cursor:pointer;font-size:10px;color:var(--color-text-muted);font-weight:700;letter-spacing:.5px;">VER →</span>
       </div>
       <div class="chart-subtitle">Por facturación del período · cantidad de clientes únicos</div>
@@ -3979,7 +3979,7 @@ function sbSwitch(n) {
 
   <!-- Reportería por Rango de Fechas -->
   <div class="chart-card full" id="section-reporteria-rango" style="margin-top:24px;">
-    <div class="chart-title">📊 Reportería por Rango de Fechas</div>
+    <div class="chart-title">Reportería por Rango de Fechas</div>
     <div class="chart-subtitle">Filtrá por fecha para ver métricas por plan, altas, bajas y mora en el período elegido.</div>
     <div style="display:flex;align-items:flex-end;gap:12px;margin-top:14px;flex-wrap:wrap;">
       <div class="filter-group">
@@ -4003,14 +4003,14 @@ function sbSwitch(n) {
 
   <!-- Sección: Facturas del Mes (por fecha de aprobación) -->
   <div class="chart-card full" id="section-cobros-mes" style="margin-top:20px;">
-    <div class="chart-title">📋 Desglose de comisiones del período</div>
+    <div class="chart-title">Desglose de comisiones del período</div>
     <div class="chart-subtitle" id="subtitle-cobros-mes">Desagregado por tipo de comisión para los cobros aprobados en el período seleccionado.</div>
     <div id="kpi-cobros-mes" style="margin-top:12px;"></div>
   </div>
 
   <!-- Sección: Ticket promedio por comisión -->
   <div class="chart-card full" id="section-ticket-comision" style="margin-top:20px;">
-    <div class="chart-title">🎟️ Ticket Promedio por Comisión</div>
+    <div class="chart-title">Ticket Promedio por Comisión</div>
     <div class="chart-subtitle">Precio final promedio por boleta en el período y el peso de cada comisión sobre ese ticket.</div>
     <div id="kpi-ticket-comision" style="margin-top:12px;"></div>
   </div>
@@ -4095,7 +4095,7 @@ function sbSwitch(n) {
 <!-- TAB 4: FIDELIZACIÓN -->
 <div class="tab-content" id="tab-4">
   <div class="chart-card full" style="margin-bottom:20px;">
-    <div class="chart-title">🏆 Fidelización de Socios Activos</div>
+    <div class="chart-title">Fidelización de Socios Activos</div>
     <div class="chart-subtitle">Antigüedad medida en meses de cobertura paga (los planes 3/6/12 meses cuentan toda su vigencia). "Activo" = con cobertura vigente en el último mes con datos. El filtro de mes específico no aplica a esta sección: siempre mide la fidelidad acumulada a la fecha.</div>
   </div>
   <div class="kpi-grid" id="kpi-fidelidad" style="grid-template-columns:repeat(5,1fr);"></div>
@@ -4148,12 +4148,12 @@ function sbSwitch(n) {
   <div class="kpi-grid" id="kpi-semanal"></div>
   <div class="chart-grid" style="margin-bottom:20px;">
     <div class="chart-card">
-      <div class="chart-title">📅 Volumen de Transacciones por Semana</div>
+      <div class="chart-title">Volumen de Transacciones por Semana</div>
       <div class="chart-subtitle" style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">Facturas emitidas vs. cobros aprobados · últimas 26 semanas</div>
       <canvas id="chart-semanal-vol" height="260"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">💰 Montos por Semana (ARS)</div>
+      <div class="chart-title">Montos por Semana (ARS)</div>
       <div class="chart-subtitle" style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">Facturado vs. cobrado bruto · últimas 26 semanas</div>
       <canvas id="chart-semanal-ars" height="260"></canvas>
     </div>
@@ -4181,12 +4181,12 @@ function sbSwitch(n) {
   <!-- Evolución + Rechazo -->
   <div class="chart-grid" style="margin-bottom:20px;">
     <div class="chart-card">
-      <div class="chart-title">📈 Evolución Mensual de Ingresos</div>
+      <div class="chart-title">Evolución Mensual de Ingresos</div>
       <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">Ingresos aprobados y socios únicos por mes</div>
       <canvas id="chart-acc-evol" height="260"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">🚦 Tasa de Rechazo por Mes</div>
+      <div class="chart-title">Tasa de Rechazo por Mes</div>
       <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">
         🟢 &lt;30% normal · 🟡 30-40% atención · 🔴 &gt;40% crítico
       </div>
@@ -4196,7 +4196,7 @@ function sbSwitch(n) {
 
   <!-- Heatmap -->
   <div class="chart-card" style="margin-bottom:20px;">
-    <div class="chart-title">🔥 Mapa de Calor — Concurrencia por Hora y Día</div>
+    <div class="chart-title">Mapa de Calor — Concurrencia por Hora y Día</div>
     <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:14px;">Ingresos totales históricos · útil para staffing y programación de clases</div>
     <div id="heatmap-accesos"></div>
   </div>
@@ -4204,7 +4204,7 @@ function sbSwitch(n) {
   <!-- Hora + DOW -->
   <div class="chart-grid" style="margin-bottom:20px;">
     <div class="chart-card">
-      <div class="chart-title">🕐 Distribución por Franja Horaria</div>
+      <div class="chart-title">Distribución por Franja Horaria</div>
       <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">Total histórico · 🔴 pico · 🟡 medio · 🔵 bajo</div>
       <canvas id="chart-acc-hora" height="250"></canvas>
     </div>
@@ -4681,6 +4681,223 @@ if (window.innerWidth <= 1100 && window.innerWidth > 768 && !_sbCollapsed) {
   toggleSidebar();
 }
 </script>
+
+
+<style id="design-uplift">
+/* =====================================================
+   DESIGN UPLIFT — frontend-design skill
+   Principio: cada elección sirve al brief de SportClub.
+   No hay adornos sin propósito.
+   ===================================================== */
+
+/* ── 1. Sidebar: identidad de marca en el estado de navegación ── */
+.sb-item.active {
+  background: rgba(227,30,36,0.13) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: inset 3px 0 0 var(--sc-red) !important;
+}
+.sidebar.collapsed .sb-item.active {
+  box-shadow: none !important;
+  background: rgba(227,30,36,0.2) !important;
+  border-radius: 8px !important;
+}
+.sb-item:hover:not(.active) {
+  background: rgba(253,185,19,0.07) !important;
+  color: var(--sc-gold) !important;
+}
+/* Top accent bar — ancla visual de identidad de marca */
+.sidebar {
+  border-top: 2px solid var(--sc-red) !important;
+}
+/* Toggle button de collapse → colores de marca */
+.sb-toggle-btn:hover {
+  background: rgba(227,30,36,0.2) !important;
+  border-color: var(--sc-red) !important;
+  color: #fff !important;
+}
+/* Fecha en sidebar → gold en vez de azul genérico */
+.sb-date-val {
+  color: var(--sc-gold) !important;
+}
+/* Section labels: más visibles */
+.sidebar-section-label {
+  color: #5a618a !important;
+  letter-spacing: 0.15em !important;
+}
+
+/* ── 2. KPI cards — elemento firma del diseño ──
+   El border-left codifica el tipo de métrica semánticamente.
+   No es decoración: a simple vista sabés qué tipo de dato estás leyendo.
+   (:has() soportado en todos los navegadores modernos desde 2023) */
+.kpi-card {
+  border-left: 3px solid var(--sc-gold) !important;
+  padding-left: 14px !important;
+}
+.kpi-card:has(.kpi-value.danger) {
+  border-left-color: var(--sc-red) !important;
+}
+.kpi-card:has(.kpi-value.success) {
+  border-left-color: var(--color-success) !important;
+}
+.kpi-card:has(.kpi-value.accent) {
+  border-left-color: var(--color-accent) !important;
+}
+.kpi-card:has(.kpi-value.warning) {
+  border-left-color: var(--color-warning) !important;
+}
+/* KPI values: más grandes, numeración tabular */
+.kpi-value {
+  font-size: 26px !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.5px !important;
+}
+.kpi-label {
+  font-size: 10px !important;
+  letter-spacing: 0.06em !important;
+}
+/* Hover más ligero — el border ya hace el trabajo de llamar la atención */
+.kpi-card:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+}
+
+/* ── 3. Chart titles — ancla visual de jerarquía ── */
+.chart-title {
+  padding-left: 10px !important;
+  border-left: 2px solid var(--sc-red) !important;
+  line-height: 1.4 !important;
+}
+
+/* ── 4. Year button activo → gold (estado de filtro principal) ── */
+.year-btn.active {
+  background: var(--sc-gold) !important;
+  color: #0F1923 !important;
+  border-color: var(--sc-gold) !important;
+  font-weight: 800 !important;
+}
+.year-btn:hover:not(.active) {
+  border-color: var(--sc-gold) !important;
+  color: var(--sc-gold) !important;
+}
+
+/* ── 5. Tables — acento rojo en headers ── */
+.data-table th {
+  border-bottom: 1px solid rgba(227,30,36,0.4) !important;
+}
+.data-table tr:nth-child(even) td {
+  background: rgba(0,0,0,0.1) !important;
+}
+
+/* ── 6. Tabs activos → coherencia con paleta ── */
+.tab-btn.active {
+  color: var(--sc-gold) !important;
+  border-bottom-color: var(--sc-red) !important;
+}
+
+/* ── 7. Chart cards hover — sutil, no distrae ── */
+.chart-card {
+  transition: box-shadow 0.25s ease !important;
+}
+.chart-card:hover {
+  box-shadow: 0 4px 20px rgba(227,30,36,0.09), 0 1px 4px rgba(0,0,0,0.25) !important;
+}
+
+/* ── 8. Filter select hover — feedback sin ruido ── */
+.filter-select:hover {
+  border-color: rgba(253,185,19,0.4) !important;
+}
+
+/* ── 9. Sidebar footer — más visible ── */
+.sidebar-footer { color: #4a5070 !important; }
+
+/* ── Mobile: mantener coherencia en modo responsive ── */
+@media (max-width: 768px) {
+  .sb-item.active {
+    box-shadow: inset 3px 0 0 var(--sc-red) !important;
+  }
+  .kpi-value { font-size: clamp(16px, 5vw, 24px) !important; }
+}
+</style>
+
+
+<style id="design-uplift-v2">
+/* ════════════════════════════════════════════
+   DESIGN UPLIFT v2 — mejoras estructurales
+   ════════════════════════════════════════════ */
+
+/* ── Tab fade-in transition ──
+   display:none→block no transiciona, pero el @keyframes sí se dispara
+   en el momento que .active se agrega — efecto inmediato y limpio */
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tab-content.active {
+  animation: tabFadeIn 0.22s ease !important;
+}
+
+/* ── Loading spinner animado ── */
+@keyframes spinRing {
+  to { transform: rotate(360deg); }
+}
+.loading {
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+.loading::before {
+  content: '';
+  display: block;
+  width: 22px; height: 22px;
+  border: 2px solid rgba(253,185,19,0.15);
+  border-top-color: var(--sc-gold);
+  border-radius: 50%;
+  animation: spinRing 0.75s linear infinite;
+}
+
+/* ── Resumen period selector — ancla visual dorada ── */
+.rs-period-selector {
+  border-left: 3px solid var(--sc-gold) !important;
+  background: linear-gradient(135deg, var(--color-surface2) 0%, rgba(253,185,19,0.03) 100%) !important;
+}
+/* Botones de tipo de período (Semana / Mes / Semestre / Año) */
+.rs-ptype.active {
+  background: var(--sc-gold) !important;
+  color: #0F1923 !important;
+  font-weight: 700 !important;
+}
+
+/* ── Section eyebrow — jerarquía dentro del tab ── */
+.section-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--sc-gold);
+}
+
+/* ── Sidebar footer — fecha más visible ── */
+.sidebar-footer {
+  color: #5a6080 !important;
+  font-size: 10.5px !important;
+}
+
+/* ── Consolidar azul residual → marca ── */
+/* collapsed active item */
+.sidebar.collapsed .sb-item.active {
+  background: rgba(227,30,36,0.2) !important;
+  box-shadow: none !important;
+}
+/* chart card border on hover */
+.chart-card:hover {
+  border-color: rgba(227,30,36,0.3) !important;
+}
+/* sb-item active — reforzar que ya lo hace design-uplift */
+.sb-item.active {
+  box-shadow: inset 3px 0 0 var(--sc-red) !important;
+  background: rgba(227,30,36,0.13) !important;
+}
+</style>
 
 </body>
 </html>
