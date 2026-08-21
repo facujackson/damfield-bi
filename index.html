@@ -4534,6 +4534,35 @@ function renderTabAltasBajas() {
     totalBajas = bajasDnis.length;
     saldoNeto  = totalAltas - totalBajas;
 
+    // ── Confirmadas vs en gracia (15 días desde fin de mes) ──
+    var hastaDateMes = new Date(yy + '-' + String(mm).padStart(2,'0') + '-' + '28T00:00:00');
+    // Usar último día real del mes
+    var ultimoDia = new Date(yy, mm, 0).getDate();
+    hastaDateMes = new Date(yy + '-' + String(mm).padStart(2,'0') + '-' + String(ultimoDia).padStart(2,'0') + 'T00:00:00');
+    var graceCutoffMes = new Date(hastaDateMes.getTime() - 15 * 86400000);
+
+    // Último cobro por DNI
+    var lastCobMes = {};
+    DATA_COBROS.forEach(function(r) {
+      if (r[2] !== 'aprobado' || !r[0] || !r[12]) return;
+      var p = r[12].split('/');
+      if (p.length !== 3) return;
+      var faISO = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+      if (!lastCobMes[r[0]] || faISO > lastCobMes[r[0]].fa) {
+        lastCobMes[r[0]] = { fa: faISO, plan: r[13], dur: planDuracionMeses ? planDuracionMeses(r[13]) : 1 };
+      }
+    });
+
+    var bajasConfirmadas = 0, bajasEnGracia = 0;
+    bajasDnis.forEach(function(dni) {
+      var lc = lastCobMes[dni];
+      if (!lc) { bajasConfirmadas++; return; }
+      var faDate = new Date(lc.fa + 'T00:00:00');
+      var nextDue = new Date(faDate.getTime() + (lc.dur || 1) * 30 * 86400000);
+      if (nextDue >= graceCutoffMes) bajasEnGracia++;
+      else bajasConfirmadas++;
+    });
+
     // Enriquecer con DATA_ALTAS/BAJAS para nombres y motivos
     altasPer = altasDnis.map(function(dni) { return altasLookup[dni] || [dni,'','','','','']; });
     bajasPer = bajasDnis.map(function(dni) { return bajasLookup[dni] || [dni,'','','','','','Sin renovación']; });
@@ -4549,6 +4578,10 @@ function renderTabAltasBajas() {
       motivoCount[m2] = (motivoCount[m2]||0) + 1;
     });
     topMotivos = Object.entries(motivoCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+
+    // Exponer para uso en KPI card
+    window._abBajasConf  = bajasConfirmadas;
+    window._abBajasGracia = bajasEnGracia;
 
   } else {
     // ── Otros modos (semana/semestre): comportamiento original por rango de fechas ──
@@ -4569,6 +4602,9 @@ function renderTabAltasBajas() {
 
   var subAltas = mesAnteriorLabel ? 'No activos en ' + mesAnteriorLabel : 'Inscripciones en el período';
   var subBajas = mesAnteriorLabel ? 'Activos en ' + mesAnteriorLabel + ' que no renovaron' : 'Inactivaciones en el período';
+  var subBajasDetalle = (mesAnteriorLabel && window._abBajasConf !== undefined)
+    ? fmt(window._abBajasConf) + ' confirmadas · ' + fmt(window._abBajasGracia) + ' en gracia'
+    : '';
 
   var kpiEl = document.getElementById('ab-kpis');
   if (kpiEl) kpiEl.innerHTML =
@@ -4581,6 +4617,7 @@ function renderTabAltasBajas() {
       '<div class="kpi-label">Bajas Netas</div>' +
       '<div class="kpi-value" style="color:#E74C3C;font-size:2rem;">'+fmt(totalBajas)+'</div>' +
       '<div class="kpi-sub">'+subBajas+'</div>' +
+      (subBajasDetalle ? '<div class="kpi-sub" style="margin-top:4px;font-size:10px;color:var(--color-text-muted);">'+subBajasDetalle+'</div>' : '') +
     '</div>' +
     '<div class="kpi-card">' +
       '<div class="kpi-label">Crecimiento Neto</div>' +
