@@ -4491,42 +4491,101 @@ function renderTabAltasBajas() {
   var desde = dh[0], hasta = dh[1];
   if (!desde || !hasta) return;
 
-  var altasPer = DATA_ALTAS.filter(function(r) { return r[1] >= desde && r[1] <= hasta; });
-  var bajasPer = DATA_BAJAS.filter(function(r) { return r[1] >= desde && r[1] <= hasta; });
-  var totalAltas = altasPer.length;
-  var totalBajas = bajasPer.length;
-  var saldoNeto  = totalAltas - totalBajas;
-
-  var bajasSinCP = bajasPer.filter(function(r) {
-    var m = (r[6]||'').toLowerCase();
-    return !(m.indexOf('cambio') >= 0 && m.indexOf('plan') >= 0);
-  }).length;
-
-  var motivoCount = {};
-  bajasPer.forEach(function(r) {
-    var m = r[6] || 'Sin motivo';
-    motivoCount[m] = (motivoCount[m]||0) + 1;
-  });
-  var topMotivos = Object.entries(motivoCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
-
   function fmt(n) { return n.toLocaleString('es-AR'); }
+
+  // ── Lookups de nombres/motivos desde DATA_ALTAS y DATA_BAJAS ──
+  var altasLookup = {};
+  DATA_ALTAS.forEach(function(r) { if (r[0]) altasLookup[r[0]] = r; });
+  var bajasLookup = {};
+  DATA_BAJAS.forEach(function(r) {
+    if (r[0] && (!bajasLookup[r[0]] || r[1] > bajasLookup[r[0]][1])) bajasLookup[r[0]] = r;
+  });
+
+  var totalAltas, totalBajas, saldoNeto, bajasSinCP, topMotivos, altasPer, bajasPer, mesAnteriorLabel;
+
+  if (abPeriodType === 'mes' && abPeriodValue) {
+    // ── Modo MES: comparativa socios activos vs mes anterior (DATA_COBROS) ──
+    var partesMes = abPeriodValue.split('-');
+    var yy = parseInt(partesMes[0]), mm = parseInt(partesMes[1]);
+    var yyPrev = yy, mmPrev = mm - 1;
+    if (mmPrev < 1) { mmPrev = 12; yyPrev--; }
+    var mesActualISO  = abPeriodValue; // 'YYYY-MM'
+    var mesAnteriorISO = yyPrev + '-' + String(mmPrev).padStart(2,'0');
+    var mesesNombres = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    mesAnteriorLabel = mesesNombres[mmPrev] + ' ' + yyPrev;
+
+    function activosDeMes(mesISO) {
+      var dnis = {};
+      DATA_COBROS.forEach(function(r) {
+        if (r[2] !== 'aprobado' || !r[0]) return;
+        var per = parsePeriodo(r[3]); if (!per) return;
+        if (mesesCubiertos(per, r[13]).indexOf(mesISO) >= 0) dnis[r[0]] = true;
+      });
+      return dnis;
+    }
+
+    var activosActual   = activosDeMes(mesActualISO);
+    var activosAnterior = activosDeMes(mesAnteriorISO);
+
+    var altasDnis = Object.keys(activosActual).filter(function(d) { return !activosAnterior[d]; });
+    var bajasDnis = Object.keys(activosAnterior).filter(function(d) { return !activosActual[d]; });
+
+    totalAltas = altasDnis.length;
+    totalBajas = bajasDnis.length;
+    saldoNeto  = totalAltas - totalBajas;
+
+    // Enriquecer con DATA_ALTAS/BAJAS para nombres y motivos
+    altasPer = altasDnis.map(function(dni) { return altasLookup[dni] || [dni,'','','','','']; });
+    bajasPer = bajasDnis.map(function(dni) { return bajasLookup[dni] || [dni,'','','','','','Sin renovación']; });
+
+    bajasSinCP = bajasPer.filter(function(r) {
+      var m2 = (r[6]||'').toLowerCase();
+      return !(m2.indexOf('cambio') >= 0 && m2.indexOf('plan') >= 0);
+    }).length;
+
+    var motivoCount = {};
+    bajasPer.forEach(function(r) {
+      var m2 = r[6] || 'Sin renovación';
+      motivoCount[m2] = (motivoCount[m2]||0) + 1;
+    });
+    topMotivos = Object.entries(motivoCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+
+  } else {
+    // ── Otros modos (semana/semestre): comportamiento original por rango de fechas ──
+    mesAnteriorLabel = null;
+    altasPer = DATA_ALTAS.filter(function(r) { return r[1] >= desde && r[1] <= hasta; });
+    bajasPer = DATA_BAJAS.filter(function(r) { return r[1] >= desde && r[1] <= hasta; });
+    totalAltas = altasPer.length;
+    totalBajas = bajasPer.length;
+    saldoNeto  = totalAltas - totalBajas;
+    bajasSinCP = bajasPer.filter(function(r) {
+      var m2 = (r[6]||'').toLowerCase();
+      return !(m2.indexOf('cambio') >= 0 && m2.indexOf('plan') >= 0);
+    }).length;
+    var motivoCount2 = {};
+    bajasPer.forEach(function(r) { var m2 = r[6]||'Sin motivo'; motivoCount2[m2] = (motivoCount2[m2]||0)+1; });
+    topMotivos = Object.entries(motivoCount2).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+  }
+
+  var subAltas = mesAnteriorLabel ? 'No activos en ' + mesAnteriorLabel : 'Inscripciones en el período';
+  var subBajas = mesAnteriorLabel ? 'Activos en ' + mesAnteriorLabel + ' que no renovaron' : 'Inactivaciones en el período';
 
   var kpiEl = document.getElementById('ab-kpis');
   if (kpiEl) kpiEl.innerHTML =
     '<div class="kpi-card">' +
-      '<div class="kpi-label">Total Altas</div>' +
+      '<div class="kpi-label">Altas Netas</div>' +
       '<div class="kpi-value" style="color:#2ECC71;font-size:2rem;">'+fmt(totalAltas)+'</div>' +
-      '<div class="kpi-sub">Inscripciones en el período</div>' +
+      '<div class="kpi-sub">'+subAltas+'</div>' +
     '</div>' +
     '<div class="kpi-card">' +
-      '<div class="kpi-label">Total Bajas</div>' +
+      '<div class="kpi-label">Bajas Netas</div>' +
       '<div class="kpi-value" style="color:#E74C3C;font-size:2rem;">'+fmt(totalBajas)+'</div>' +
-      '<div class="kpi-sub">Inactivaciones en el período</div>' +
+      '<div class="kpi-sub">'+subBajas+'</div>' +
     '</div>' +
     '<div class="kpi-card">' +
-      '<div class="kpi-label">Saldo Neto</div>' +
+      '<div class="kpi-label">Crecimiento Neto</div>' +
       '<div class="kpi-value" style="color:'+(saldoNeto>=0?'#2ECC71':'#E74C3C')+';font-size:2rem;">'+(saldoNeto>=0?'+':'')+fmt(saldoNeto)+'</div>' +
-      '<div class="kpi-sub">Altas − Bajas</div>' +
+      '<div class="kpi-sub">Altas − Bajas' + (mesAnteriorLabel ? ' vs ' + mesAnteriorLabel : '') + '</div>' +
     '</div>' +
     '<div class="kpi-card">' +
       '<div class="kpi-label">Bajas Reales</div>' +
@@ -4547,20 +4606,24 @@ function renderTabAltasBajas() {
     '</div>';
 
   // Tabla ALTAS
-  var altasSorted = altasPer.slice().sort(function(a,b){ return b[1] < a[1] ? -1 : 1; });
+  var altasSorted = altasPer.slice().sort(function(a,b){ return (b[1]||'') < (a[1]||'') ? -1 : 1; });
   var altasRows = altasSorted.map(function(r) {
     return '<tr>' +
       '<td>'+r[0]+'</td>' +
-      '<td>'+r[2]+' '+r[3]+'</td>' +
-      '<td>'+(r[1]?r[1].split('-').reverse().join('/'):'')+'</td>' +
-      '<td>'+(r[5]||'')+'</td>' +
-      '<td>'+(r[4]||'')+'</td>' +
+      '<td>'+(r[2]||'—')+' '+(r[3]||'')+'</td>' +
+      '<td>'+(r[1]?r[1].split('-').reverse().join('/'):'—')+'</td>' +
+      '<td>'+(r[5]||'—')+'</td>' +
+      '<td>'+(r[4]||'—')+'</td>' +
     '</tr>';
   }).join('');
 
+  var tituloAltas = mesAnteriorLabel
+    ? '📈 Altas netas vs ' + mesAnteriorLabel + ' (' + fmt(totalAltas) + ')'
+    : '📈 Altas del período (' + fmt(totalAltas) + ')';
+
   var altasTbl = document.getElementById('ab-table-altas');
   if (altasTbl) altasTbl.innerHTML =
-    '<div class="chart-title" style="margin-bottom:12px;">📈 Altas del período ('+fmt(totalAltas)+')</div>' +
+    '<div class="chart-title" style="margin-bottom:12px;">'+tituloAltas+'</div>' +
     '<div style="overflow-x:auto;">' +
     '<table class="data-table">' +
       '<thead><tr><th>DNI</th><th>Nombre</th><th>Fecha Alta</th><th>Plan</th><th>Localidad</th></tr></thead>' +
@@ -4568,22 +4631,26 @@ function renderTabAltasBajas() {
     '</table></div>';
 
   // Tabla BAJAS
-  var bajasSorted = bajasPer.slice().sort(function(a,b){ return b[1] < a[1] ? -1 : 1; });
+  var bajasSorted = bajasPer.slice().sort(function(a,b){ return (b[1]||'') < (a[1]||'') ? -1 : 1; });
   var bajasRows = bajasSorted.map(function(r) {
     var esCambio = r[6] && r[6].toLowerCase().indexOf('cambio') >= 0 && r[6].toLowerCase().indexOf('plan') >= 0;
     return '<tr>' +
       '<td>'+r[0]+'</td>' +
-      '<td>'+r[2]+' '+r[3]+'</td>' +
-      '<td>'+(r[1]?r[1].split('-').reverse().join('/'):'')+'</td>' +
-      '<td>'+(r[5]||'')+'</td>' +
-      '<td>'+(r[4]||'')+'</td>' +
-      '<td style="color:'+(esCambio?'var(--color-text-muted)':'#E74C3C')+';font-size:11px;">'+(r[6]||'—')+'</td>' +
+      '<td>'+(r[2]||'—')+' '+(r[3]||'')+'</td>' +
+      '<td>'+(r[1]?r[1].split('-').reverse().join('/'):'—')+'</td>' +
+      '<td>'+(r[5]||'—')+'</td>' +
+      '<td>'+(r[4]||'—')+'</td>' +
+      '<td style="color:'+(esCambio?'var(--color-text-muted)':'#E74C3C')+';font-size:11px;">'+(r[6]||'Sin renovación')+'</td>' +
     '</tr>';
   }).join('');
 
+  var tituloBajas = mesAnteriorLabel
+    ? '📉 Bajas netas vs ' + mesAnteriorLabel + ' (' + fmt(totalBajas) + ')'
+    : '📉 Bajas del período (' + fmt(totalBajas) + ')';
+
   var bajasTbl = document.getElementById('ab-table-bajas');
   if (bajasTbl) bajasTbl.innerHTML =
-    '<div class="chart-title" style="margin-bottom:12px;">📉 Bajas del período ('+fmt(totalBajas)+')</div>' +
+    '<div class="chart-title" style="margin-bottom:12px;">'+tituloBajas+'</div>' +
     '<div style="overflow-x:auto;">' +
     '<table class="data-table">' +
       '<thead><tr><th>DNI</th><th>Nombre</th><th>Fecha Baja</th><th>Plan</th><th>Localidad</th><th>Motivo</th></tr></thead>' +
