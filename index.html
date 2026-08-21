@@ -1416,6 +1416,10 @@ function renderTab0() {
   const sociosActivos = activosDnis.size;
   const durBreakdown = Object.keys(activosByDur).map(Number).sort((a,b)=>a-b)
     .map(d => fmt(activosByDur[d].size) + ' × ' + (d===1?'mensual':d+'m')).join(' · ');
+  // Socios que aparecen en más de un bucket (multi-plan)
+  let _sumDesglose = 0;
+  Object.keys(activosByDur).forEach(d => { _sumDesglose += activosByDur[d].size; });
+  const multiPlanCount = _sumDesglose - sociosActivos;
 
   // ── Ticket Promedio ────────────────────────────────────────────
   const ticketProm = countFact > 0 ? totalFacturado / countFact : 0;
@@ -1439,6 +1443,7 @@ function renderTab0() {
       +'<div class="kpi-label">Socios Activos</div>'
       +'<div class="kpi-value accent">'+fmt(sociosActivos)+'</div>'
       +'<div class="kpi-sub" style="line-height:1.6;">'+(durBreakdown||'Sin datos para este período')+'</div>'
+      +(multiPlanCount > 0 ? '<div class="kpi-sub" style="margin-top:4px;font-size:10px;color:var(--color-text-muted);">+'+fmt(multiPlanCount)+' con plan en múltiples duraciones</div>' : '')
     +'</div>'
     +'<div class="kpi-card">'
       +'<div class="kpi-label">Facturas Emitidas</div>'
@@ -4602,9 +4607,7 @@ function renderTabAltasBajas() {
 
   var subAltas = mesAnteriorLabel ? 'No activos en ' + mesAnteriorLabel : 'Inscripciones en el período';
   var subBajas = mesAnteriorLabel ? 'Activos en ' + mesAnteriorLabel + ' que no renovaron' : 'Inactivaciones en el período';
-  var subBajasDetalle = (mesAnteriorLabel && window._abBajasConf !== undefined)
-    ? fmt(window._abBajasConf) + ' confirmadas · ' + fmt(window._abBajasGracia) + ' en gracia'
-    : '';
+  var showGracia = mesAnteriorLabel && window._abBajasConf !== undefined;
 
   var kpiEl = document.getElementById('ab-kpis');
   if (kpiEl) kpiEl.innerHTML =
@@ -4617,7 +4620,6 @@ function renderTabAltasBajas() {
       '<div class="kpi-label">Bajas Netas</div>' +
       '<div class="kpi-value" style="color:#E74C3C;font-size:2rem;">'+fmt(totalBajas)+'</div>' +
       '<div class="kpi-sub">'+subBajas+'</div>' +
-      (subBajasDetalle ? '<div class="kpi-sub" style="margin-top:4px;font-size:10px;color:var(--color-text-muted);">'+subBajasDetalle+'</div>' : '') +
     '</div>' +
     '<div class="kpi-card">' +
       '<div class="kpi-label">Crecimiento Neto</div>' +
@@ -4640,6 +4642,16 @@ function renderTabAltasBajas() {
           '</div>';
         }).join('')
       ) +
+    '</div>' +
+    '<div class="kpi-card">' +
+      '<div class="kpi-label">Bajas Confirmadas</div>' +
+      '<div class="kpi-value" style="color:#E74C3C;font-size:2rem;">' + (showGracia ? fmt(window._abBajasConf) : '—') + '</div>' +
+      '<div class="kpi-sub">No pagaron · ya vencidas</div>' +
+    '</div>' +
+    '<div class="kpi-card">' +
+      '<div class="kpi-label">Bajas en Gracia</div>' +
+      '<div class="kpi-value" style="color:#F39C12;font-size:2rem;">' + (showGracia ? fmt(window._abBajasGracia) : '—') + '</div>' +
+      '<div class="kpi-sub">Aún dentro de los 15 días</div>' +
     '</div>';
 
   // Tabla ALTAS
